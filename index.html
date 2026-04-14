@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Tap Miner ONLINE</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(#4facfe,#00f2fe);
+    text-align: center;
+    color: white;
+}
+
+#stats {background:#222;padding:10px;}
+
+#block {
+    width:200px;height:200px;margin:30px auto;
+    border:6px solid #333;
+    transition:0.1s;
+}
+
+.stone {background:#777;}
+.dirt {background:#6b4423;}
+.diamond {background:#00eaff;}
+.boss {background:red;}
+
+.hit {transform:scale(0.9);}
+
+button {
+    padding:10px;margin:5px;border:none;
+    border-radius:10px;background:#ff9800;color:white;
+}
+
+.window {
+    position:fixed;top:15%;left:50%;
+    transform:translateX(-50%);
+    background:#222;padding:20px;
+    border-radius:15px;display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="stats">
+Рівень: <span id="level"></span> |
+HP: <span id="hp"></span> |
+💰: <span id="coins"></span><br>
+Кайло: <span id="pickaxe"></span><br>
+⚡ Урон: <span id="dmg"></span> |
+💥 Крит: <span id="crit"></span>
+</div>
+
+<div id="block" class="stone"></div>
+
+<button onclick="openShop()">🛒 Купити</button>
+<button onclick="openSell()">💰 Продати</button>
+<button onclick="openInv()">🎒 Інвентар</button>
+
+<div id="shop" class="window">
+<h3>Магазин</h3>
+<button onclick="buyUpgrade()">+Урон (200)</button><br>
+<button onclick="buyCrit()">+Крит (200)</button><br>
+<button onclick="buyAuto()">Авто-майнінг (500)</button><br>
+<button onclick="closeAll()">Закрити</button>
+</div>
+
+<div id="sell" class="window">
+<h3>Продати</h3>
+Камінь <span id="stoneC"></span> <button onclick="sellRes('stone')">+5</button><br>
+Земля <span id="dirtC"></span> <button onclick="sellRes('dirt')">+3</button><br>
+Алмаз <span id="diamondC"></span> <button onclick="sellRes('diamond')">+20</button><br>
+<button onclick="closeAll()">Закрити</button>
+</div>
+
+<div id="inv" class="window">
+<h3>Інвентар</h3>
+Камінь: <span id="stoneI"></span><br>
+Земля: <span id="dirtI"></span><br>
+Алмаз: <span id="diamondI"></span><br>
+<button onclick="closeAll()">Закрити</button>
+</div>
+
+<script>
+let block=document.getElementById("block");
+let shop=document.getElementById("shop");
+let sell=document.getElementById("sell");
+let inv=document.getElementById("inv");
+
+/* дані */
+let data=JSON.parse(localStorage.getItem("game"))||{
+level:1,hp:10,maxHp:10,coins:0,
+damage:1,crit:0,auto:0,
+inv:{stone:0,dirt:0,diamond:0}
+};
+
+/* клік */
+block.onclick=function(){
+hit(data.damage);
+};
+
+function hit(dmg){
+let real=dmg;
+if(Math.random()<data.crit) real*=2;
+
+data.hp-=real;
+
+block.classList.add("hit");
+setTimeout(()=>block.classList.remove("hit"),100);
+
+if(data.hp<=0){
+data.coins+=10*data.level;
+data.level++;
+data.maxHp+=5;
+data.hp=data.maxHp;
+
+/* бос */
+if(data.level%5==0){
+block.className="boss";
+data.hp*=3;
+}else{
+let types=["stone","dirt","diamond"];
+let t=types[Math.floor(Math.random()*3)];
+data.inv[t]++;
+block.className=t;
+}
+}
+
+save();
+update();
+}
+
+/* авто */
+setInterval(()=>{
+if(data.auto>0){
+hit(data.auto);
+}
+},1000);
+
+/* магазин */
+function buyUpgrade(){
+if(data.coins>=200){data.coins-=200;data.damage+=2;}
+}
+function buyCrit(){
+if(data.coins>=200){data.coins-=200;data.crit+=0.05;}
+}
+function buyAuto(){
+if(data.coins>=500){data.coins-=500;data.auto+=1;}
+}
+
+/* продаж */
+function sellRes(t){
+if(data.inv[t]>0){
+data.inv[t]--;
+data.coins+=(t=="stone"?5:t=="dirt"?3:20);
+}
+}
+
+/* вікна */
+function openShop(){closeAll();shop.style.display="block";}
+function openSell(){closeAll();sell.style.display="block";}
+function openInv(){closeAll();inv.style.display="block";}
+function closeAll(){
+shop.style.display="none";
+sell.style.display="none";
+inv.style.display="none";
+}
+
+/* збереження */
+function save(){
+localStorage.setItem("game",JSON.stringify(data));
+}
+
+/* оновлення */
+function update(){
+level.innerText=data.level;
+hp.innerText=data.hp;
+coins.innerText=data.coins;
+pickaxe.innerText="Кастом";
+dmg.innerText=data.damage;
+crit.innerText=Math.floor(data.crit*100)+"%";
+
+stoneI.innerText=data.inv.stone;
+dirtI.innerText=data.inv.dirt;
+diamondI.innerText=data.inv.diamond;
+  stoneC.innerText=data.inv.stone;
+dirtC.innerText=data.inv.dirt;
+diamondC.innerText=data.inv.diamond;
+}
+
+update();
+</script>
+
+</body>
+</html>
